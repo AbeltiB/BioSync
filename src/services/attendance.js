@@ -1,20 +1,24 @@
 const { getPage } = require('./browser');
+const config = require('../config');
+const { logStep } = require('./logger');
 
 async function fetchAttendance(startDate, endDate) {
   const page = await getPage();
 
-  // Navigate to attendance page (adjust URL/path)
+  logStep('attendance', 'STEP 1/5 navigate attendance page', { startDate, endDate });
   await page.goto(`${config.biotime.url}/attendance`, { waitUntil: 'networkidle' });
 
-  // Set date range (example, adjust selectors)
+  logStep('attendance', 'STEP 2/5 fill date filters');
   await page.fill('#start_date', startDate); // YYYY-MM-DD
   await page.fill('#end_date', endDate);
+
+  logStep('attendance', 'STEP 3/5 trigger search');
   await page.click('#search');
 
-  // Wait for results table
+  logStep('attendance', 'STEP 4/5 wait results table');
   await page.waitForSelector('#attendance-table tbody tr');
 
-  // Scrape data
+  logStep('attendance', 'STEP 5/5 scrape records');
   const records = await page.$$eval('#attendance-table tbody tr', rows =>
     rows.map(row => {
       const cols = row.querySelectorAll('td');
@@ -27,7 +31,7 @@ async function fetchAttendance(startDate, endDate) {
     })
   );
 
-  console.log(`Fetched ${records.length} attendance records`);
+  logStep('attendance', 'records fetched', { count: records.length });
   return records;
 }
 
