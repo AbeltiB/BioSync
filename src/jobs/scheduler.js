@@ -1,37 +1,53 @@
 const cron = require('node-cron');
 const { login } = require('../services/auth');
-const { fetchAttendance } = require('../services/attendance');
-const { uploadShifts } = require('../services/shifts');
-const { generateRandomShifts } = require('./shiftGenerator'); // you'll implement this
+const { uploadShiftsXlsBuffer } = require('../services/shifts');
+const config = require('../config');
+const { logStep, logError } = require('../services/logger');
+
+async function fetchShiftsXlsFromEndpoint() {
+  const endpoint = config.external?.shiftsEndpoint;
+  const token = config.external?.token;
+
+  if (!endpoint) {
+    throw new Error('EXTERNAL_SHIFTS_ENDPOINT is not configured');
+  }
+
+  logStep('scheduler', 'STEP 1/3 fetch XLS from external endpoint', { endpoint });
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`External endpoint failed with status ${response.status}`);
+  }
+
+  logStep('scheduler', 'STEP 2/3 read response as arrayBuffer');
+  const arrayBuffer = await response.arrayBuffer();
+
+  logStep('scheduler', 'STEP 3/3 convert to Node buffer');
+  return Buffer.from(arrayBuffer);
+}
+
+async function runScheduledShiftSync() {
+  logStep('scheduler', 'weekly job started');
+  await login();
+  const xlsBuffer = await fetchShiftsXlsFromEndpoint();
+  await uploadShiftsXlsBuffer(xlsBuffer, 'cron-shifts.xls');
+  logStep('scheduler', 'weekly job finished');
+}
 
 // Run every Sunday at 2:00 AM
 cron.schedule('0 2 * * 0', async () => {
-  console.log('Running weekly attendance fetch and shift upload...');
-
   try {
-    await login();
-
-    // Fetch last week's attendance (adjust dates as needed)
-    const today = new Date();
-    const lastWeek = new Date(today);
-    lastWeek.setDate(today.getDate() - 7);
-    const startDate = lastWeek.toISOString().split('T')[0];
-    const endDate = today.toISOString().split('T')[0];
-
-    const attendance = await fetchAttendance(startDate, endDate);
-    // Store attendance somewhere (e.g., database, file)
-    console.log(`Fetched ${attendance.length} records`);
-
-    // Generate and upload random shifts for next week
-    const shifts = generateRandomShifts(); // implement based on your logic
-    for (const shift of shifts) {
-      await uploadShifts(shift);
-    }
-    console.log(`Uploaded ${shifts.length} shifts`);
-
+    await runScheduledShiftSync();
   } catch (err) {
-    console.error('Weekly job failed:', err);
+    logError('scheduler', 'weekly job', err);
   }
 });
 
-console.log('Cron jobs scheduled');
+logStep('scheduler', 'cron jobs scheduled');
+
+module.exports = { runScheduledShiftSync, fetchShiftsXlsFromEndpoint };
