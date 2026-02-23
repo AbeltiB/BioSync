@@ -1,0 +1,30 @@
+{
+  "name": "biosync",
+  "version": "1.0.0",
+  "description": "[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.x-brightgreen)](https://nodejs.org)\r [![Playwright](https://img.shields.io/badge/playwright-1.40+-blue)](https://playwright.dev)\r [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)\r [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbeltiB/BioSync.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AbeltiB/BioSync/issues"
+  },
+  "homepage": "https://github.com/AbeltiB/BioSync#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "node-cron": "^4.2.1",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
